@@ -6,28 +6,40 @@ from django.core.mail import send_mail
 from .forms import EmailPostForm,CommentForm
 from django.conf import settings
 from django.views.decorators.http import require_POST
+from taggit.models import Tag
 
 # from django.http import Http404
 
-# def post_list(request):
+def post_list(request,tag_slug=None):
 
-#     post_list=Post.objects.all()
-#     paginator = Paginator(post_list, 2)
-#     page_number = request.GET.get("page",1)
-#     try:
-#         posts = paginator.page(page_number)
-#     except EmptyPage:
-#         posts = paginator.page(paginator.num_pages)
-#     except PageNotAnInteger: 
-#         posts = paginator.page(1)
+    post_list=Post.objects.all()
 
-#     return render(request,'blog/post/list.html',{'posts':posts})
+    tag=None
 
-class PostListView(ListView):
-    model=Post
-    context_object_name='posts'
-    paginate_by=2
-    template_name='blog/post/list.html'
+    if tag_slug:
+
+        tag=get_object_or_404(Tag,slug=tag_slug)
+        post_list=post_list.filter(tags__in=[tag])  
+        # post_list=post_list.filter(tags__slug__in=[tag])
+  
+
+    paginator = Paginator(post_list, 2)
+    page_number = request.GET.get("page",1)
+    try:
+        posts = paginator.page(page_number)
+    except EmptyPage:
+        posts = paginator.page(paginator.num_pages)
+    except PageNotAnInteger: 
+        posts = paginator.page(1)
+
+    return render(request,'blog/post/list.html',{'posts':posts,'tag':tag})
+
+# class PostListView(ListView):
+#     model=Post
+#     context_object_name='posts'
+#     paginate_by=2
+#     template_name='blog/post/list.html'
+
 def post_detail(request,year,month,day,post):
 
     post=get_object_or_404(Post, status=Post.Status.PUBLISHED,
